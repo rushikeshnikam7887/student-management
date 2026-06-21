@@ -5,29 +5,45 @@ const app = express();
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
-// Database Connection
-const db = mysql.createConnection({
-    host: "localhost",
+// ======================
+// DATABASE CONNECTION
+// ======================
+
+const db = mysql.createPool({
+    host: "student-mysql",
     user: "root",
-    password: "root@123",
-    database: "studentdb"
+    password: "root123",
+    database: "studentdb",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
 });
 
-// Connect Database
-db.connect((err) => {
-    if (err) {
-        console.log("Database Connection Failed");
-        console.log(err);
-    } else {
-        console.log("MySQL Connected");
-    }
-});
+// Test Database Connection
+function testConnection() {
+    db.getConnection((err, connection) => {
 
+        if (err) {
+            console.log("Database not ready, retrying in 5 seconds...");
+            console.log(err.message);
+
+            setTimeout(testConnection, 5000);
+            return;
+        }
+
+        console.log("MySQL Connected Successfully");
+        connection.release();
+    });
+}
+
+testConnection();
 // ======================
 // REGISTER ROUTE
 // ======================
+
 app.post("/register", (req, res) => {
 
     const { name, email, userid, password } = req.body;
@@ -62,6 +78,7 @@ app.post("/register", (req, res) => {
 // ======================
 // LOGIN ROUTE
 // ======================
+
 app.post("/login", (req, res) => {
 
     const { userid, password } = req.body;
@@ -107,6 +124,7 @@ app.post("/login", (req, res) => {
 // ======================
 // SERVER
 // ======================
+
 app.listen(3000, () => {
     console.log("Server Running on Port 3000");
 });
