@@ -9,6 +9,17 @@ pipeline {
             }
         }
 
+        stage('SonarQube Scan') {
+            steps {
+                script {
+                    def scannerHome = tool 'sonar-scanner'
+                    withSonarQubeEnv('SonarQube') {
+                        sh "${scannerHome}/bin/sonar-scanner"
+                    }
+                }
+            }
+        }
+
         stage('Build Docker') {
             steps {
                 sh 'docker compose build'
@@ -17,7 +28,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker compose down'
+                sh 'docker compose down || true'
                 sh 'docker compose up -d'
             }
         }
