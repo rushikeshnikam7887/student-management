@@ -19,13 +19,16 @@ pipeline {
                 }
             }
         }
-
         stage('Build Docker') {
             steps {
                 sh 'docker compose build'
             }
         }
-
+	stage('Trivy Image Scan') {
+	    steps {
+	    sh 'trivy image student-management-app'
+	    }
+	}
         stage('Deploy') {
             steps {
                 sh 'docker compose down || true'
