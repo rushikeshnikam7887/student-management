@@ -22,6 +22,7 @@ services:
 
   app:
     build: .
+    image: student-management-app:latest
     container_name: student-app
 
     depends_on:
