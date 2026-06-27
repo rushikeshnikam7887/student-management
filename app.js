@@ -40,6 +40,16 @@ function testConnection() {
 }
 
 testConnection();
+
+// ======================
+// HOME ROUTE
+// ======================
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "login.html"));
+});
+
+
 // ======================
 // REGISTER ROUTE
 // ======================
