@@ -1,4 +1,5 @@
 import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
+
 pipeline {
     agent any
 
@@ -21,30 +22,32 @@ pipeline {
             }
         }
 
-	stage('Quality Gate') {
-		steps {
-			timeout(time: 5, unit: 'MINUTES') {
-			waitForQualityGate abortPipeline: true
-			}
-		 }
-	}
-        
-	stage('Build Docker') {
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker') {
             steps {
                 sh 'docker compose build'
             }
         }
-	stage('Trivy Image Scan') {
-	    steps {
-		sh '''
-		trivy image \
-			--severity HIGH,CRITICAL \
-			--format table \
-			--output trivy-report.txt \
-			student-management-app	
-		'''
-	    }
-	}
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                trivy image \
+                    --severity HIGH,CRITICAL \
+                    --format table \
+                    --output trivy-report.txt \
+                    student-management-app
+                '''
+            }
+        }
+
         stage('Deploy') {
             steps {
                 sh 'docker compose down || true'
@@ -56,6 +59,15 @@ pipeline {
             steps {
                 sh 'docker ps'
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '''
+                trivy-report.txt,
+                reports/*
+            ''', fingerprint: true
         }
     }
 }
