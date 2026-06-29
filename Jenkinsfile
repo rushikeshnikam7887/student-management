@@ -52,11 +52,16 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                sh 'docker compose down || true'
-                sh 'docker compose up -d'
-            }
+        stage('Deploy test') {
+           steps {
+        		sh '''
+        		docker rm -f student-test || true
+				docker run -d \
+        		--name student-test \
+        		-p 8081:3000 \
+        		student-management-app
+        		'''
+    		}
         }
 
         stage('Verify') {
