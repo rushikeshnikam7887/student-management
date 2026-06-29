@@ -81,6 +81,7 @@ pipeline {
                     -x zap-report.xml
                     -I || true
                 '''
+                returnStatus: true
             }
         }
 
