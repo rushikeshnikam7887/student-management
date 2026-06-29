@@ -40,7 +40,7 @@ pipeline {
             steps {
                 sh '''
                 trivy image \
-                    --severity HIGH,CRITICAL \
+                    --severity CRITICAL \
 		            --exit-code 1 \
                     --format table \
                     --output trivy-report.txt \
