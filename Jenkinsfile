@@ -105,26 +105,27 @@ pipeline {
                 sh 'docker ps'
             }
         }
-    }
-	stage('Deploy Production') {
-	    steps {
-	        sh '''
-	        docker rm -f student-management || true
-	
-	        docker run -d \
-	        --name student-management \
-	        -p 3000:3000 \
-	        student-management-app
+    
+		stage('Deploy Production') {
+		    steps {
+		        sh '''
+		        docker rm -f student-management || true
+		
+		        docker run -d \
+		        --name student-management \
+		        -p 3000:3000 \
+		        student-management-app
+		        '''
+		    }
+		}
+	    post {
+	   	 always {
+	        archiveArtifacts artifacts: '''
+	        trivy-report.txt,
+	        reports/zap-report.html,
+	        reports/zap-report.xml
 	        '''
-	    }
-	}
-    post {
-   	 always {
-        archiveArtifacts artifacts: '''
-        trivy-report.txt,
-        reports/zap-report.html,
-        reports/zap-report.xml
-        '''
-   	 }
+	   	 }
+		}
 	}
 }
