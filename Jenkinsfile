@@ -63,20 +63,68 @@ pipeline {
         		'''
     		}
         }
-
+		stage('OWASP ZAP Scan') {
+		    steps {
+		        sh '''
+		        mkdir -p reports
+		
+		        docker run --rm \
+		        --network host \
+		        -v $(pwd)/reports:/zap/wrk \
+		        ghcr.io/zaproxy/zaproxy:stable \
+		        zap-baseline.py \
+		        -t http://localhost:8081 \
+		        -r zap-report.html \
+		        -x zap-report.xml
+		        '''
+		    }
+		}
+		stage('ZAP Security Gate') {
+		    steps {
+		        script {
+		
+		            def highAlerts = sh(
+		                script: '''
+		                grep -o "<riskcode>3</riskcode>" reports/zap-report.xml | wc -l
+		                ''',
+		                returnStdout: true
+		            ).trim()
+		
+		            echo "High Alerts = ${highAlerts}"
+		
+		            if (highAlerts != "0") {
+		                error("High Risk Vulnerabilities Found by OWASP ZAP")
+		            }
+		
+		        }
+		    }
+		}
+		
         stage('Verify') {
             steps {
                 sh 'docker ps'
             }
         }
     }
-
+	stage('Deploy Production') {
+	    steps {
+	        sh '''
+	        docker rm -f student-management || true
+	
+	        docker run -d \
+	        --name student-management \
+	        -p 3000:3000 \
+	        student-management-app
+	        '''
+	    }
+	}
     post {
-        always {
-            archiveArtifacts artifacts: '''
-                trivy-report.txt,
-                reports/*
-            ''', fingerprint: true
-        }
-    }
+   	 always {
+        archiveArtifacts artifacts: '''
+        trivy-report.txt,
+        reports/zap-report.html,
+        reports/zap-report.xml
+        '''
+   	 }
+	}
 }
