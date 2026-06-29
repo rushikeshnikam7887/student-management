@@ -80,7 +80,7 @@ pipeline {
                     -r zap-report.html \
                     -x zap-report.xml
                     -I || true
-                '''
+                ''',
                 returnStatus: true
             }
         }
