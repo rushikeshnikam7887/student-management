@@ -65,23 +65,26 @@ pipeline {
             }
         }
 
-        stage('OWASP ZAP Scan') {
+       stage('OWASP ZAP Scan') {
             steps {
-                sh '''
-                mkdir -p reports
-                chmod -R 777 reports
+                script {
+                    sh(
+                        script: '''
+                        mkdir -p reports
         
-                docker run --rm \
-                    --network host \
-                    -v $(pwd)/reports:/zap/wrk \
-                    ghcr.io/zaproxy/zaproxy:stable \
-                    zap-baseline.py \
-                    -t http://localhost:8081 \
-                    -r zap-report.html \
-                    -x zap-report.xml
-                    -I || true
-                ''',
-                returnStatus: true
+                        docker run --rm \
+                            --network host \
+                            -v $(pwd)/reports:/zap/wrk \
+                            ghcr.io/zaproxy/zaproxy:stable \
+                            zap-baseline.py \
+                            -t http://localhost:8081 \
+                            -r zap-report.html \
+                            -x zap-report.xml \
+                            -I
+                        ''',
+                        returnStatus: true
+                    )
+                }
             }
         }
 
