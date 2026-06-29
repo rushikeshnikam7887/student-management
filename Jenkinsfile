@@ -41,91 +41,100 @@ pipeline {
                 sh '''
                 trivy image \
                     --severity CRITICAL \
-		            --exit-code 1 \
+                    --exit-code 1 \
                     --format table \
                     --output trivy-report.txt \
                     student-management-app
-					
-					echo "====********========== Trivy Report ==========*******========"
-					cat trivy-report.txt               
-				 '''
+
+                echo "================ Trivy Report ================"
+                cat trivy-report.txt
+                '''
             }
         }
 
-        stage('Deploy test') {
-           steps {
-        		sh '''
-        		docker rm -f student-test || true
-				docker run -d \
-        		--name student-test \
-        		-p 8081:3000 \
-        		student-management-app
-        		'''
-    		}
+        stage('Deploy Test') {
+            steps {
+                sh '''
+                docker rm -f student-test || true
+
+                docker run -d \
+                    --name student-test \
+                    -p 8081:3000 \
+                    student-management-app
+                '''
+            }
         }
-		stage('OWASP ZAP Scan') {
-		    steps {
-		        sh '''
-		        mkdir -p reports
-		
-		        docker run --rm \
-		        --network host \
-		        -v $(pwd)/reports:/zap/wrk \
-		        ghcr.io/zaproxy/zaproxy:stable \
-		        zap-baseline.py \
-		        -t http://localhost:8081 \
-		        -r zap-report.html \
-		        -x zap-report.xml
-		        '''
-		    }
-		}
-		stage('ZAP Security Gate') {
-		    steps {
-		        script {
-		
-		            def highAlerts = sh(
-		                script: '''
-		                grep -o "<riskcode>3</riskcode>" reports/zap-report.xml | wc -l
-		                ''',
-		                returnStdout: true
-		            ).trim()
-		
-		            echo "High Alerts = ${highAlerts}"
-		
-		            if (highAlerts != "0") {
-		                error("High Risk Vulnerabilities Found by OWASP ZAP")
-		            }
-		
-		        }
-		    }
-		}
-		
+
+        stage('OWASP ZAP Scan') {
+            steps {
+                sh '''
+                mkdir -p reports
+
+                docker run --rm \
+                    --network host \
+                    -v $(pwd)/reports:/zap/wrk \
+                    ghcr.io/zaproxy/zaproxy:stable \
+                    zap-baseline.py \
+                    -t http://localhost:8081 \
+                    -r zap-report.html \
+                    -x zap-report.xml
+                '''
+            }
+        }
+
+        stage('ZAP Security Gate') {
+            steps {
+                script {
+
+                    def highAlerts = sh(
+                        script: '''
+                        grep -o "<riskcode>3</riskcode>" reports/zap-report.xml | wc -l
+                        ''',
+                        returnStdout: true
+                    ).trim()
+
+                    echo "High Alerts = ${highAlerts}"
+
+                    if (highAlerts != "0") {
+                        error("High Risk Vulnerabilities Found by OWASP ZAP")
+                    }
+                }
+            }
+        }
+
+        stage('Cleanup Test') {
+            steps {
+                sh 'docker rm -f student-test || true'
+            }
+        }
+
+        stage('Deploy Production') {
+            steps {
+                sh '''
+                docker rm -f student-management || true
+
+                docker run -d \
+                    --name student-management \
+                    -p 3000:3000 \
+                    student-management-app
+                '''
+            }
+        }
+
         stage('Verify') {
             steps {
                 sh 'docker ps'
             }
         }
-    
-		stage('Deploy Production') {
-		    steps {
-		        sh '''
-		        docker rm -f student-management || true
-		
-		        docker run -d \
-		        --name student-management \
-		        -p 3000:3000 \
-		        student-management-app
-		        '''
-		    }
-		}
-	    post {
-	   	 always {
-	        archiveArtifacts artifacts: '''
-	        trivy-report.txt,
-	        reports/zap-report.html,
-	        reports/zap-report.xml
-	        '''
-	   	 }
-		}
-	}
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '''
+                trivy-report.txt,
+                reports/zap-report.html,
+                reports/zap-report.xml
+            ''', fingerprint: true
+        }
+    }
 }
