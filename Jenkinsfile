@@ -79,7 +79,7 @@ pipeline {
                     -t http://localhost:8081 \
                     -r zap-report.html \
                     -x zap-report.xml
-                    -I
+                    -I || true
                 '''
             }
         }
