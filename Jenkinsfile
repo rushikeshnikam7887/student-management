@@ -120,17 +120,20 @@ pipeline {
         
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub',
-                    usernameVariable: '7887769418',
-                    passwordVariable: '@RushI2003'
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
         
                     sh '''
-                    docker login -u $DOCKER_USER -p $DOCKER_PASS
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                    docker tag student-management-app 7887769418/student-management:${BUILD_NUMBER}
+                    docker tag student-management-app 7887769418/student-management:latest
         
-                    docker tag student-management-app \
-                    yourusername/student-management:v1
+                    docker push 7887769418/student-management:${BUILD_NUMBER}
+                    docker push 7887769418/student-management:latest
         
-                    docker push yourusername/student-management:v1
+                    docker logout
                     '''
         
                 }
