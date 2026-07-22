@@ -114,23 +114,29 @@ pipeline {
             }
         }
 
-        stage('Deploy Production') {
-            steps {
-                sh '''
-                docker rm -f student-management || true
+        stage('Push Docker Hub') {
 
-                docker run -d \
-                    --name student-management \
-                    -p 3000:3000 \
-                    student-management-app
-                '''
-            }
-        }
-
-        stage('Verify') {
             steps {
-                sh 'docker ps'
+        
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub',
+                    usernameVariable: '7887769418',
+                    passwordVariable: '@RushI2003'
+                )]) {
+        
+                    sh '''
+                    docker login -u $DOCKER_USER -p $DOCKER_PASS
+        
+                    docker tag student-management-app \
+                    yourusername/student-management:v1
+        
+                    docker push yourusername/student-management:v1
+                    '''
+        
+                }
+        
             }
+
         }
     }
 
