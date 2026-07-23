@@ -36,19 +36,22 @@ pipeline {
             }
         }
 
-        stage('Trivy Image Scan') {
+       stage('Trivy Image Scan') {
             steps {
-                sh '''
-                trivy image \
-                    --severity CRITICAL \
-                    --exit-code 1 \
-                    --format table \
-                    --output trivy-report.txt \
-                    student-management-app
-
-                echo "================ Trivy Report ================"
-                cat trivy-report.txt
-                '''
+                script {
+                    sh '''
+                    trivy image \
+                        --ignorefile .trivyignore \
+                        --severity CRITICAL \
+                        --exit-code 1 \
+                        --format table \
+                        --output trivy-report.txt \
+                        student-management-app
+        
+                    echo "========== Trivy Report =========="
+                    cat trivy-report.txt
+                    '''
+                }
             }
         }
 
